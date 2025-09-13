@@ -1,10 +1,10 @@
-import requests
+import requests 
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import random
 import datetime
-import sqlite3
+import sqlite3  # para conexão com o banco
 
 # Cabeçalho para simular navegador e evitar bloqueio
 headers = {
@@ -23,7 +23,7 @@ pg_temp_max = 4
 pasta = "C:/Users/sabado/Desktop/Python AD Daniela/python_analise_dados-main/"
 saidaCSV = f'filmes_adoro_cinema_{data_hoje}.csv'
 bancoDados = "filmes.db"
-Agora = datetime.datetime.now
+
 # Loop pelas páginas
 for pagina in range(1, paginaLimite + 1):
     url = f"{baseURL}?page={pagina}"
@@ -103,48 +103,53 @@ for pagina in range(1, paginaLimite + 1):
     tempo = random.uniform(pg_temp_min, pg_temp_max)
     time.sleep(tempo)
 
+# ===========================
 # Salva os dados em CSV
+# ===========================
 df = pd.DataFrame(filmes)
-df.to_csv(pasta + saidaCSV, sep=';', index=False, encoding='utf-8-sig')
+df.to_csv(pasta + saídaCSV, sep=';', index=False, encoding='utf-8-sig')
 print(f"\nTotal de filmes coletados: {len(filmes)}")
 
-##########################################
-#   SQLite: Criação e insert no banco # serva apenas para arquivar os dados como .db
-##########################################
-with sqlite3.connect(f'{pasta}{bancoDados}') as conn:
-    cursor = conn.cursor()
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS filmes(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            Titulo TEXT,
-            Direcao TEXT,
-            Nota REAL,
-            Link TEXT UNIQUE,
-            Ano TEXT,
-            Categoria TEXT           
-        )         
-    ''')
-    for filme in filmes
-        try:
-            cursor.execute('''
-                INSERT OR IGNORE INTO FILMES (Titulo, Direção, Nota, Link, Ano, Categoria) VALUES (?, ?, ?, ?, ?, ?)
-                           
-            ''',( filme['Titulo'],
-                filme['Direção'],
-                float(filme['Nota']) if filme['Nota'] != 'N/A' else None,
-                filme['Link'],
-                filme['Ano'],
-                filme['Categoria']
-            ))
-        except Exception as e:
-            print(f"Erro ao inserir o filme {filme['Titulo']} no banco de dados\n Erro: {e}")
-    conn.commit()
-termino = datetime.datetime.now()
-print("-----------------------------------------------")
-print("Dados raspados e salvos com sucesso")
-print(f"\nArquivo CSV salvo em: {pasta}{saidaCSV}")
-print(f"\nDados armazenados no banco de dados {bancoDados}")
-print(f"\nIniciado em: {Agora.strftime('%H:%M:%S')}")
-print(f"\nFinalizado em: {termino.strftime('%H:%M:%S')}")
-print("\n Obrigado por usar o Sistema de BotFilmes")
-print("-----------------------------------------------")
+# ===========================
+# Salva os dados no SQLite
+# ===========================
+
+# Conexão com o banco
+conn = sqlite3.connect(pasta + bancoDados)
+cursor = conn.cursor()
+
+# Cria tabela se não existir
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS filmes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo TEXT,
+    direcao TEXT,
+    nota REAL,
+    link TEXT UNIQUE,
+    ano TEXT,
+    categoria TEXT
+)
+''')
+
+# Insere os dados no banco
+for filme in filmes:
+    try:
+        cursor.execute('''
+            INSERT OR IGNORE INTO filmes (titulo, direcao, nota, link, ano, categoria)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (
+            filme["Titulo"],
+            filme["Direção"],
+            float(filme["Nota"]),
+            filme["Link"],
+            filme["Ano"],
+            filme["Categoria"]
+        ))
+    except Exception as e:
+        print(f"Erro ao inserir no banco o filme {filme['Titulo']}: {e}")
+
+# Salva e fecha a conexão
+conn.commit()
+conn.close()
+print("Dados salvos no banco de dados SQLite com sucesso.")
+

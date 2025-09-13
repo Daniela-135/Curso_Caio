@@ -399,6 +399,27 @@ def ver():
 ''', opcoes=opcoes)
 
 
+@app.route('/apagar/<nome_tabela>', methods=['POST','GET'])
+
+def apagarTabela(nome_tabela):
+
+    conn = sqlite3.connect(f'{caminho}banco01.bd')
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT COUNT(*) FROM sqlite_master WHERE TYPY='tabela' AND name='{nome_tabela}'")
+    existe = cursor.fetchone()[0]
+    if not existe:
+        conn.close
+        return "Tabela não foi encontrada"
+    try:
+        cursor.execute(f"DROP TABLE'{nome_tabela}'")
+        conn.commit()
+        return f"Tabela {nome_tabela} apagada com sucesso!"
+
+    except Exception as erro:
+        conn.close
+        return " Não foi possivel apagar a tabela, erro: {erro}"
+        
+
 
 # o mundo fica aqui!!!!!
 if __name__ == '__main__':
